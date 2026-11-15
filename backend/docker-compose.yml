@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: shop
+      POSTGRES_PASSWORD: shop
+      POSTGRES_DB: shopai
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # SQL выполняется автоматически при первом создании БД (по алфавиту)
+      - ./migrations/0001_init.up.sql:/docker-entrypoint-initdb.d/0001_init.sql:ro
+      - ./migrations/0002_demo.sql:/docker-entrypoint-initdb.d/0002_demo.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shop -d shopai"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    environment:
+      PORT: "8080"
+      DATABASE_URL: postgres://shop:shop@db:5432/shopai?sslmode=disable
+      JWT_SECRET: dev-secret-change-me-please-32chars
+      CORS_ORIGIN: "*"
+      # ИИ: раскомментируйте и укажите ключ, иначе работает демо-режим
+      # LLM_API_URL: https://api.openai.com/v1
+      # LLM_API_KEY: sk-...
+      # LLM_MODEL: gpt-4o-mini
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
