@@ -14,6 +14,9 @@ type Config struct {
 	LLMURL   string
 	LLMKey   string
 	LLMModel string
+	// CloudPayments (платёжный виджет). Если пусто, остаётся тестовая оплата без реальных денег.
+	CPPublicID  string
+	CPAPISecret string
 }
 
 func Load() (*Config, error) {
@@ -25,6 +28,9 @@ func Load() (*Config, error) {
 		LLMURL:      os.Getenv("LLM_API_URL"),
 		LLMKey:      os.Getenv("LLM_API_KEY"),
 		LLMModel:    getenv("LLM_MODEL", "gpt-4o-mini"),
+
+		CPPublicID:  os.Getenv("CLOUDPAYMENTS_PUBLIC_ID"),
+		CPAPISecret: os.Getenv("CLOUDPAYMENTS_API_SECRET"),
 	}
 	if c.DatabaseURL == "" {
 		return nil, errors.New("DATABASE_URL is not set")

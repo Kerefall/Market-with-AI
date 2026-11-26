@@ -488,7 +488,7 @@ paths:
   /api/orders/{number}/pay:
     post:
       tags: [Orders (buyer)]
-      summary: Тестовая оплата (simulate=failure имитирует отказ)
+      summary: Тестовая оплата без реальных денег (simulate=failure имитирует отказ). Отключена, если заданы ключи CloudPayments
       parameters: [{ $ref: '#/components/parameters/Number' }]
       requestBody:
         required: true
@@ -582,3 +582,51 @@ paths:
       responses:
         '201': { description: Создана }
         '400': { $ref: '#/components/responses/BadRequest' }
+  /api/orders/{number}/payment-intent:
+    get:
+      tags: [Orders (buyer)]
+      summary: Параметры для платёжного виджета CloudPayments
+      description: |
+        Работает, только если на сервере заданы ключи CloudPayments (иначе 503).
+        Сумму берёт из БД. Ответ передаётся в `new cp.CloudPayments().start(...)` как есть.
+      parameters:
+        - { $ref: '#/components/parameters/Number' }
+        - { name: email, in: query, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Параметры виджета
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  publicTerminalId: { type: string }
+                  paymentSchema: { type: string, example: Single }
+                  amount: { type: number }
+                  currency: { type: string, example: RUB }
+                  externalId: { type: string, description: Номер заказа }
+                  description: { type: string }
+                  receiptEmail: { type: string }
+                  userInfo: { type: object }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '503': { description: Онлайн-оплата не настроена }
+  /api/payments/cloudpayments/check:
+    post:
+      tags: [Orders (buyer)]
+      summary: "Webhook CloudPayments: Check (для CloudPayments, не для фронтенда)"
+      description: Подпись проверяется по заголовку X-Content-HMAC. Ответ {"code":0} разрешает платёж.
+      responses:
+        '200': { description: 'code: 0 — ок, 10 — заказ не найден, 12 — неверная сумма, 13 — платёж не может быть принят' }
+  /api/payments/cloudpayments/pay:
+    post:
+      tags: [Orders (buyer)]
+      summary: "Webhook CloudPayments: Pay (платёж прошёл, заказ становится paid)"
+      responses:
+        '200': { description: 'code: 0' }
+  /api/payments/cloudpayments/fail:
+    post:
+      tags: [Orders (buyer)]
+      summary: "Webhook CloudPayments: Fail (платёж отклонён)"
+      responses:
+        '200': { description: 'code: 0' }

@@ -18,6 +18,7 @@ import (
 	"shopai/internal/docs"
 	"shopai/internal/httpx"
 	"shopai/internal/order"
+	"shopai/internal/payment"
 	"shopai/internal/shop"
 	"shopai/internal/user"
 )
@@ -30,6 +31,7 @@ func NewRouter(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
 	shopH := shop.NewHandler(pool)
 	catalogH := catalog.NewHandler(pool)
 	orderH := order.NewHandler(pool)
+	payH := payment.NewHandler(pool, cfg.CPPublicID, cfg.CPAPISecret)
 	aiH := ai.NewHandler(pool, ai.NewClient(cfg.LLMURL, cfg.LLMKey, cfg.LLMModel))
 	analyticsH := analytics.NewHandler(pool)
 	adminH := admin.NewHandler(pool)
@@ -66,7 +68,17 @@ func NewRouter(pool *pgxpool.Pool, cfg *config.Config) http.Handler {
 
 		r.Post("/orders", orderH.Create)
 		r.Get("/orders/{number}", orderH.Track)
-		r.Post("/orders/{number}/pay", orderH.Pay)
+
+		// Оплата. Если заданы ключи CloudPayments, работает реальная оплата через виджет,
+		// а тестовая имитация отключается (иначе заказ можно было бы «оплатить» бесплатно).
+		if cfg.CPPublicID != "" && cfg.CPAPISecret != "" {
+			r.Get("/orders/{number}/payment-intent", payH.Intent)
+			r.Post("/payments/cloudpayments/check", payH.Check)
+			r.Post("/payments/cloudpayments/pay", payH.Pay)
+			r.Post("/payments/cloudpayments/fail", payH.Fail)
+		} else {
+			r.Post("/orders/{number}/pay", orderH.Pay)
+		}
 
 		// --- Авторизованные ---
 		r.Group(func(r chi.Router) {
