@@ -312,6 +312,10 @@ func (h *Handler) Pay(w http.ResponseWriter, r *http.Request) {
 	if !httpx.Decode(w, r, &in) {
 		return
 	}
+	if in.Simulate != "" && in.Simulate != "success" && in.Simulate != "failure" {
+		httpx.Error(w, http.StatusBadRequest, `simulate must be "success" or "failure"`)
+		return
+	}
 	ctx := r.Context()
 	tx, err := h.pool.Begin(ctx)
 	if err != nil {
