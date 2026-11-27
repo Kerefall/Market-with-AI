@@ -146,6 +146,9 @@ func (in *productInput) validate() string {
 		if n == "" {
 			return "name must not be empty"
 		}
+		if len([]rune(n)) > 200 {
+			return "name must be at most 200 characters"
+		}
 		in.Name = &n
 	}
 	if in.Price != nil && *in.Price < 0 {
