@@ -83,5 +83,9 @@ func (c *httpClient) Complete(ctx context.Context, system, user string) (string,
 	if len(out.Choices) == 0 {
 		return "", errors.New("llm returned no choices")
 	}
-	return strings.TrimSpace(out.Choices[0].Message.Content), nil
+	text := strings.TrimSpace(out.Choices[0].Message.Content)
+	if text == "" {
+		return "", errors.New("llm returned empty content")
+	}
+	return text, nil
 }
