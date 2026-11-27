@@ -502,7 +502,7 @@ func (h *Handler) PublicList(w http.ResponseWriter, r *http.Request) {
 		where = append(where, strings.ReplaceAll(cond, "?", "$"+strconv.Itoa(len(args))))
 	}
 	if q := strings.TrimSpace(qp.Get("q")); q != "" {
-		add("(p.name ILIKE ? OR p.description ILIKE ?)", "%"+q+"%")
+		add("(p.name ILIKE ? OR p.description ILIKE ?)", "%"+likeEscape(q)+"%")
 	}
 	if v := httpx.QueryInt(r, "category_id", 0); v > 0 {
 		add("(p.category_id = ? OR p.category_id IN (SELECT id FROM categories WHERE parent_id = ?))", int64(v))
@@ -587,4 +587,9 @@ func (h *Handler) Categories(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpx.JSON(w, http.StatusOK, out)
+}
+
+// likeEscape экранирует спецсимволы шаблона LIKE, чтобы «%» и «_» в поиске искались как обычные символы.
+func likeEscape(s string) string {
+	return strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`).Replace(s)
 }
