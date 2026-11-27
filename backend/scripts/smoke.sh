@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Сквозная проверка API. Нужны curl и jq. Запуск: bash scripts/smoke.sh
 set -e
+for c in curl jq; do
+  command -v "$c" >/dev/null || { echo "Нужна утилита $c: sudo apt install $c"; exit 1; }
+done
 API=${API:-http://localhost:8080}
 j() { curl -s -H 'Content-Type: application/json' "$@"; }
 
