@@ -3,6 +3,7 @@ package ai
 import (
 	"context"
 	"errors"
+	"log"
 	"math"
 	"net/http"
 	"strings"
@@ -145,6 +146,7 @@ func (h *Handler) Description(w http.ResponseWriter, r *http.Request) {
 	}
 	h.logRequest(ctx, claims.UserID, in.ProductID, "description", status, started)
 	if err != nil {
+		log.Printf("ai description: provider error: %v", err)
 		httpx.Error(w, http.StatusBadGateway, "AI provider error")
 		return
 	}
@@ -227,6 +229,7 @@ func (h *Handler) Price(w http.ResponseWriter, r *http.Request) {
 	}
 	h.logRequest(ctx, claims.UserID, in.ProductID, "price", status, started)
 	if err != nil {
+		log.Printf("ai price: provider error: %v", err)
 		httpx.Error(w, http.StatusBadGateway, "AI provider error")
 		return
 	}
